@@ -340,7 +340,7 @@ function renderPnameList(){
 }
 $("#addPlayer").onclick = ()=>{
   if(state.players.length>=8) return;
-  state.players.push({name:"Player "+(state.players.length+1)});
+  state.players.push({name:""});
   state.rounds.forEach(r=>r.scores.push(0));
   renderPnameList();
 };
