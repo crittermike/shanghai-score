@@ -345,16 +345,30 @@ $("#addPlayer").onclick = ()=>{
   renderPnameList();
 };
 $("#savePlayers").onclick = ()=>{
-  state.players.forEach((p,i)=>{ if(!p.name.trim()) p.name="Player "+(i+1); });
+  const blank = state.players.some(p=>!p.name.trim());
+  if(blank){
+    let err = $("#pnameErr");
+    if(!err){
+      err = document.createElement("p");
+      err.id = "pnameErr";
+      err.style.cssText = "color:var(--bad);font-size:13px;font-weight:600;margin:-4px 0 10px";
+      $("#pnameList").after(err);
+    }
+    err.textContent = "Every player needs a name.";
+    return;
+  }
+  const e = $("#pnameErr"); if(e) e.remove();
+  state.players.forEach(p=>{ p.name = p.name.trim(); });
   save(); closeModal("#playersModal"); render();
 };
 
 /* ---------- New game ---------- */
 $("#btnNew").onclick = ()=>{
-  showConfirm("Start new game?", "Keeps current player names, clears all round scores.", ()=>{
-    const names = state.players.map(p=>p.name);
-    state = blankState(names);
+  showConfirm("Start new game?", "Clears all scores. You'll set player names next.", ()=>{
+    const count = Math.max(2, state.players.length);
+    state = blankState(Array.from({length:count},()=>""));
     save(); render();
+    openPlayersModal();
   });
 };
 $("#btnPlayers").onclick = openPlayersModal;
