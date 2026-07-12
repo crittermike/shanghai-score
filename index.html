@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f172a">
+<title>Shanghai Score</title>
+<style>
+:root{
+  --bg:#0f172a; --panel:#1e293b; --panel2:#273549; --line:#334155;
+  --txt:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent2:#0ea5e9;
+  --good:#4ade80; --bad:#f87171; --gold:#fbbf24;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  font-size:16px;line-height:1.4;
+  padding-bottom:env(safe-area-inset-bottom);
+  -webkit-text-size-adjust:100%;
+}
+.app{max-width:600px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header{
+  position:sticky;top:0;z-index:10;background:var(--panel);
+  padding:12px 14px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding-top:calc(12px + env(safe-area-inset-top));
+}
+header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:6px}
+header h1 .dot{color:var(--gold)}
+.hbtns{display:flex;gap:6px}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:10px;font-size:15px}
+.icon-btn{background:var(--panel2);color:var(--txt);padding:8px 12px;font-size:14px;font-weight:600;border:1px solid var(--line)}
+.icon-btn:active{background:var(--line)}
+main{flex:1;padding:14px;display:flex;flex-direction:column;gap:14px}
+
+/* Round banner */
+.round-banner{
+  background:linear-gradient(135deg,var(--accent2),#6366f1);
+  border-radius:14px;padding:14px 16px;color:#fff;
+  box-shadow:0 4px 16px rgba(14,165,233,.25);
+}
+.round-banner .rnum{font-size:13px;opacity:.85;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.round-banner .rcontract{font-size:22px;font-weight:800;margin-top:2px;line-height:1.15}
+.round-banner .rprog{margin-top:8px;height:6px;background:rgba(255,255,255,.25);border-radius:4px;overflow:hidden}
+.round-banner .rprog i{display:block;height:100%;background:#fff;border-radius:4px;transition:width .3s}
+
+/* Scoreboard */
+.board{background:var(--panel);border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 8px;text-align:center;font-variant-numeric:tabular-nums}
+thead th{background:var(--panel2);font-size:13px;color:var(--muted);font-weight:600;position:sticky;top:0}
+thead th.pname{color:var(--txt);font-size:14px;font-weight:700}
+tbody td{border-top:1px solid var(--line);font-size:15px}
+tbody tr td.rlabel{color:var(--muted);font-size:12px;font-weight:600;text-align:left;padding-left:12px;white-space:nowrap}
+tbody tr.done td.rlabel{color:var(--accent)}
+tbody tr.current{background:rgba(56,189,248,.08)}
+tbody td.score{font-weight:600}
+tfoot td{border-top:2px solid var(--accent);background:var(--panel2);font-weight:800;font-size:17px;padding:12px 8px}
+tfoot td.leader{color:var(--gold)}
+.crown{font-size:12px}
+td.pcol{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.empty{color:var(--muted);text-align:center;padding:30px 10px}
+.primary{
+  background:var(--accent);color:#04283a;font-weight:800;padding:15px;
+  border-radius:12px;font-size:16px;width:100%;box-shadow:0 3px 10px rgba(56,189,248,.3);
+}
+.primary:active{background:var(--accent2)}
+.primary:disabled{background:var(--panel2);color:var(--muted);box-shadow:none}
+.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);padding:13px;width:100%;font-weight:600}
+.stack{display:flex;flex-direction:column;gap:10px}
+
+/* Modal */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-bg.open{opacity:1;pointer-events:auto}
+.modal{
+  background:var(--panel);width:100%;max-width:600px;border-radius:18px 18px 0 0;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);
+  max-height:90vh;overflow-y:auto;
+}
+.modal-bg.open .modal{transform:translateY(0)}
+.modal h2{margin:0 0 4px;font-size:19px}
+.modal .sub{color:var(--muted);font-size:14px;margin:0 0 16px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px;font-weight:600}
+input[type=text],input[type=number]{
+  width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+  color:var(--txt);padding:13px;font-size:16px;font-family:inherit;
+}
+input:focus{outline:none;border-color:var(--accent)}
+.score-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.score-row .nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.score-row input{width:110px;text-align:center;font-size:18px;font-weight:700}
+.pname-row{display:flex;gap:8px;margin-bottom:10px;align-items:center}
+.pname-row input{flex:1}
+.pname-row .del{background:var(--panel2);color:var(--bad);border:1px solid var(--line);padding:12px 14px;border-radius:10px;font-weight:700}
+.modal-actions{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.hint{font-size:12px;color:var(--muted);margin-top:-4px;margin-bottom:12px}
+.made-toggle{display:flex;gap:8px;margin:6px 0 14px}
+.made-toggle button{flex:1;padding:10px;background:var(--bg);border:1px solid var(--line);color:var(--muted);font-weight:600}
+.made-toggle button.on{background:var(--good);color:#052e16;border-color:var(--good)}
+.made-toggle button.on.bad{background:var(--bad);color:#450a0a;border-color:var(--bad)}
+.winner-box{text-align:center;padding:10px 0}
+.winner-box .trophy{font-size:52px}
+.winner-box .wname{font-size:26px;font-weight:800;color:var(--gold);margin-top:4px}
+.winner-box .wscore{color:var(--muted);margin-top:2px}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:middle}
+.tag.made{background:rgba(74,222,128,.18);color:var(--good)}
+.tag.miss{background:rgba(248,113,113,.18);color:var(--bad)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1><span class="dot">&#9733;</span> Shanghai Score</h1>
+    <div class="hbtns">
+      <button class="icon-btn" id="btnPlayers">Players</button>
+      <button class="icon-btn" id="btnNew">New</button>
+    </div>
+  </header>
+  <main id="main"></main>
+</div>
+
+<!-- Modals -->
+<div class="modal-bg" id="playersModal">
+  <div class="modal">
+    <h2>Players</h2>
+    <p class="sub">Add 2 to 8 players. Names save automatically.</p>
+    <div id="pnameList"></div>
+    <button class="ghost" id="addPlayer" style="margin-bottom:14px">+ Add player</button>
+    <div class="modal-actions">
+      <button class="primary" id="savePlayers">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="scoreModal">
+  <div class="modal">
+    <h2 id="scoreTitle">Enter Scores</h2>
+    <p class="sub" id="scoreSub"></p>
+    <div id="scoreRows"></div>
+    <p class="hint">Enter each player's card points left in hand. The player who went out scores 0.</p>
+    <div class="modal-actions">
+      <button class="primary" id="saveScores">Save Round</button>
+      <button class="ghost" id="cancelScores">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="confirmModal">
+  <div class="modal">
+    <h2 id="confirmTitle">Are you sure?</h2>
+    <p class="sub" id="confirmMsg"></p>
+    <div class="modal-actions">
+      <button class="primary" id="confirmYes">Yes</button>
+      <button class="ghost" id="confirmNo">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CONTRACTS = [
+  "2 Sets of 3",
+  "1 Set of 3 + 1 Run of 4",
+  "2 Runs of 4",
+  "3 Sets of 3",
+  "1 Set of 3 + 1 Run of 7",
+  "2 Sets of 3 + 1 Run of 5",
+  "3 Runs of 4",
+  "1 Set of 3 + 1 Run of 10",
+  "3 Sets of 3 + 1 Run of 5",
+  "3 Runs of 5"
+];
+const KEY = "shanghai-score-v1";
+const $ = s => document.querySelector(s);
+
+let state = load();
+
+function blankState(names){
+  return {
+    players: (names && names.length ? names : ["Player 1","Player 2"]).map(n=>({name:n})),
+    rounds: [], // each: {scores:[n,...]}
+    createdAt: Date.now()
+  };
+}
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if(s && s.players) return s;
+  }catch(e){}
+  return blankState();
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+function totals(){
+  return state.players.map((_,pi)=>
+    state.rounds.reduce((sum,r)=> sum + (r.scores[pi]||0), 0)
+  );
+}
+function currentRound(){ return state.rounds.length; } // 0-based index of next round to play
+function isComplete(){ return state.rounds.length >= 10; }
+
+/* ---------- Render ---------- */
+function render(){
+  const main = $("#main");
+  const t = totals();
+  const cr = currentRound();
+  const complete = isComplete();
+
+  let html = "";
+
+  // Round banner
+  if(!complete){
+    html += `<div class="round-banner">
+      <div class="rnum">Round ${cr+1} of 10</div>
+      <div class="rcontract">${CONTRACTS[cr]}</div>
+      <div class="rprog"><i style="width:${(cr/10)*100}%"></i></div>
+    </div>`;
+  } else {
+    const min = Math.min(...t);
+    const wi = t.indexOf(min);
+    html += `<div class="round-banner" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">
+      <div class="rnum">Game Complete</div>
+      <div class="rcontract">&#127942; ${escapeHtml(state.players[wi].name)} wins</div>
+      <div class="rprog"><i style="width:100%"></i></div>
+    </div>`;
+  }
+
+  // Scoreboard
+  html += `<div class="board"><table>
+    <thead><tr><th style="text-align:left;padding-left:12px">Rd</th>`;
+  state.players.forEach(p=>{
+    html += `<th class="pname pcol">${escapeHtml(p.name)}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  if(state.rounds.length === 0){
+    html += `<tr><td class="rlabel">&mdash;</td><td colspan="${state.players.length}" class="empty" style="padding:24px">No rounds yet.<br>Tap “Enter Round ${cr+1}” below.</td></tr>`;
+  } else {
+    // running totals per round for display
+    const running = state.players.map(()=>0);
+    state.rounds.forEach((r,ri)=>{
+      html += `<tr class="done"><td class="rlabel">${ri+1}. ${CONTRACTS[ri].replace(/ of /g,'/')}</td>`;
+      state.players.forEach((p,pi)=>{
+        running[pi]+= (r.scores[pi]||0);
+        const v = r.scores[pi]||0;
+        html += `<td class="score">${v}</td>`;
+      });
+      html += `</tr>`;
+    });
+  }
+  html += `</tbody><tfoot><tr><td style="text-align:left;padding-left:12px">Total</td>`;
+  const minTotal = t.length? Math.min(...t):0;
+  state.players.forEach((p,pi)=>{
+    const lead = (t[pi]===minTotal && state.rounds.length>0);
+    html += `<td class="${lead?'leader':''}">${lead?'<span class="crown">&#128081;</span> ':''}${t[pi]}</td>`;
+  });
+  html += `</tr></tfoot></table></div>`;
+
+  // Action buttons
+  html += `<div class="stack">`;
+  if(!complete){
+    html += `<button class="primary" id="enterRound">Enter Round ${cr+1} Scores</button>`;
+  }
+  if(state.rounds.length>0){
+    html += `<button class="ghost" id="undoRound">Undo Last Round</button>`;
+  }
+  html += `</div>`;
+
+  main.innerHTML = html;
+
+  if($("#enterRound")) $("#enterRound").onclick = openScoreModal;
+  if($("#undoRound")) $("#undoRound").onclick = undoRound;
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- Score modal ---------- */
+function openScoreModal(){
+  const cr = currentRound();
+  $("#scoreTitle").textContent = `Round ${cr+1} Scores`;
+  $("#scoreSub").textContent = CONTRACTS[cr];
+  const rows = $("#scoreRows");
+  rows.innerHTML = state.players.map((p,pi)=>
+    `<div class="score-row">
+      <span class="nm">${escapeHtml(p.name)}</span>
+      <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" data-pi="${pi}" placeholder="0">
+    </div>`
+  ).join("");
+  openModal("#scoreModal");
+  setTimeout(()=>{ const f=rows.querySelector("input"); if(f) f.focus(); },260);
+}
+$("#saveScores").onclick = ()=>{
+  const inputs = [...$("#scoreRows").querySelectorAll("input")];
+  const scores = inputs.map(i=>{ const v=parseInt(i.value,10); return isNaN(v)?0:Math.max(0,v); });
+  state.rounds.push({scores});
+  save(); closeModal("#scoreModal"); render();
+  if(isComplete()) setTimeout(render,50);
+};
+$("#cancelScores").onclick = ()=>closeModal("#scoreModal");
+
+function undoRound(){
+  showConfirm("Undo last round?", "This removes the most recent round's scores.", ()=>{
+    state.rounds.pop(); save(); render();
+  });
+}
+
+/* ---------- Players modal ---------- */
+function openPlayersModal(){
+  renderPnameList();
+  openModal("#playersModal");
+}
+function renderPnameList(){
+  const list = $("#pnameList");
+  list.innerHTML = state.players.map((p,i)=>
+    `<div class="pname-row">
+      <input type="text" value="${escapeHtml(p.name)}" data-i="${i}" maxlength="16" placeholder="Name">
+      ${state.players.length>2?`<button class="del" data-del="${i}">&times;</button>`:''}
+    </div>`
+  ).join("");
+  list.querySelectorAll("input").forEach(inp=>{
+    inp.oninput = e=>{ state.players[+e.target.dataset.i].name = e.target.value; };
+  });
+  list.querySelectorAll("[data-del]").forEach(b=>{
+    b.onclick = e=>{
+      const i=+e.target.dataset.del;
+      state.players.splice(i,1);
+      state.rounds.forEach(r=>r.scores.splice(i,1));
+      renderPnameList();
+    };
+  });
+  $("#addPlayer").style.display = state.players.length>=8?"none":"block";
+}
+$("#addPlayer").onclick = ()=>{
+  if(state.players.length>=8) return;
+  state.players.push({name:"Player "+(state.players.length+1)});
+  state.rounds.forEach(r=>r.scores.push(0));
+  renderPnameList();
+};
+$("#savePlayers").onclick = ()=>{
+  state.players.forEach((p,i)=>{ if(!p.name.trim()) p.name="Player "+(i+1); });
+  save(); closeModal("#playersModal"); render();
+};
+
+/* ---------- New game ---------- */
+$("#btnNew").onclick = ()=>{
+  showConfirm("Start new game?", "Keeps current player names, clears all round scores.", ()=>{
+    const names = state.players.map(p=>p.name);
+    state = blankState(names);
+    save(); render();
+  });
+};
+$("#btnPlayers").onclick = openPlayersModal;
+
+/* ---------- Confirm modal ---------- */
+let confirmCb=null;
+function showConfirm(title,msg,cb){
+  $("#confirmTitle").textContent=title;
+  $("#confirmMsg").textContent=msg;
+  confirmCb=cb; openModal("#confirmModal");
+}
+$("#confirmYes").onclick=()=>{ closeModal("#confirmModal"); if(confirmCb) confirmCb(); };
+$("#confirmNo").onclick=()=>closeModal("#confirmModal");
+
+/* ---------- Modal helpers ---------- */
+function openModal(sel){ $(sel).classList.add("open"); }
+function closeModal(sel){ $(sel).classList.remove("open"); }
+document.querySelectorAll(".modal-bg").forEach(bg=>{
+  bg.addEventListener("click",e=>{ if(e.target===bg) bg.classList.remove("open"); });
+});
+
+render();
+</script>
+</body>
+</html>
