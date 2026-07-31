@@ -49,8 +49,13 @@ main{flex:1;padding:14px;display:flex;flex-direction:column;gap:14px}
 
 /* Scoreboard */
 .board{background:var(--panel);border-radius:14px;overflow:hidden;border:1px solid var(--line)}
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px 8px;text-align:center;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th,td{padding:10px 6px;text-align:center;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+th.rlabel,td.rlabel{width:34%}
+table.p5 th,table.p5 td{padding:10px 3px;font-size:14px}
+table.p5 th.rlabel,table.p5 td.rlabel{width:26%}
+table.p6 th,table.p6 td{padding:10px 2px;font-size:13px}
+table.p6 th.rlabel,table.p6 td.rlabel{width:22%}
 thead th{background:var(--panel2);font-size:13px;color:var(--muted);font-weight:600;position:sticky;top:0}
 thead th.pname{color:var(--txt);font-size:14px;font-weight:700}
 tbody td{border-top:1px solid var(--line);font-size:15px}
@@ -61,7 +66,7 @@ tbody td.score{font-weight:600}
 tfoot td{border-top:2px solid var(--accent);background:var(--panel2);font-weight:800;font-size:17px;padding:12px 8px}
 tfoot td.leader{color:var(--gold)}
 .crown{font-size:12px}
-td.pcol{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.pcol{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .empty{color:var(--muted);text-align:center;padding:30px 10px}
 .primary{
@@ -235,10 +240,11 @@ function render(){
   }
 
   // Scoreboard
-  html += `<div class="board"><table>
-    <thead><tr><th style="text-align:left;padding-left:12px">Rd</th>`;
+  const pc = state.players.length;
+  html += `<div class="board"><table class="${pc>=6?'p6':(pc===5?'p5':'')}">
+    <thead><tr><th class="rlabel" style="text-align:left;padding-left:12px">Rd</th>`;
   state.players.forEach(p=>{
-    html += `<th class="pname pcol">${escapeHtml(p.name)}</th>`;
+    html += `<th class="pname pcol" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</th>`;
   });
   html += `</tr></thead><tbody>`;
 
@@ -257,7 +263,7 @@ function render(){
       html += `</tr>`;
     });
   }
-  html += `</tbody><tfoot><tr><td style="text-align:left;padding-left:12px">Total</td>`;
+  html += `</tbody><tfoot><tr><td class="rlabel" style="text-align:left;padding-left:12px">Total</td>`;
   const minTotal = t.length? Math.min(...t):0;
   state.players.forEach((p,pi)=>{
     const lead = (t[pi]===minTotal && state.rounds.length>0);
