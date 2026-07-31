@@ -21,6 +21,7 @@ body{
   -webkit-text-size-adjust:100%;
 }
 .app{max-width:600px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+@media (orientation:landscape){.app{max-width:none;width:100%}.modal{max-width:none}}
 header{
   position:sticky;top:0;z-index:10;background:var(--panel);
   padding:12px 14px;border-bottom:1px solid var(--line);
